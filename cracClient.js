@@ -4,6 +4,7 @@ var _ = require('lodash');
 var cracTimeUnit = 5;
 
 function bitsetStrToInt32Array(s) {
+  s = s.replace('.', '');
   //console.log(s.length / 32);
   var bi, bs = [0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (var i = s.length - 1; i >= 0; i--) {
