@@ -1,2 +1,2 @@
-# CRAC client for NodeJs
+# The CRAC client for NodeJs
 
