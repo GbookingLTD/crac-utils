@@ -1,6 +1,7 @@
 "use strict";
 
 var _ = require('lodash');
+var cracTimeUnit = 5;
 
 function bitsetStrToInt32Array(s) {
   //console.log(s.length / 32);
@@ -52,9 +53,8 @@ function getCRACFreeSlots(cracCellOffset, bitset, slotCells) {
   return freeSlots;
 }
 
-function _makeSlots(date, bitset, duration, resId, taxId) {
-  var cracTimeUnit = 5;
-  var freeSlots = getCRACFreeSlots(Math.floor(600 / cracTimeUnit), bitset, Math.floor(30 / cracTimeUnit));
+function _makeSlots(startOffset, date, bitset, duration, resId, taxId) {
+  var freeSlots = getCRACFreeSlots(Math.floor(startOffset / cracTimeUnit), bitset, Math.floor(30 / cracTimeUnit));
   var d = new Date(Date.parse(date));
   return freeSlots.map(function (cracOffset) {
     var offsetMinutes = cracOffset * cracTimeUnit;
@@ -69,13 +69,13 @@ function _makeSlots(date, bitset, duration, resId, taxId) {
   });
 }
 
-exports.prepareSlots = function (slots, taxonomyId, duration) {
+exports.prepareSlots = function (startOffset, slots, taxonomyId, duration) {
   return _.reduce(slots, function (ret, day) {
     day.resources.filter(function (r) {
       return day.excludedResources.indexOf(r.resourceId) < 0;
     }).forEach(function (r) {
       var bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset) : r.bitset;
-      ret = ret.concat(_makeSlots(day.date, bs, duration, r.resourceId, taxonomyId));
+      ret = ret.concat(_makeSlots(startOffset, day.date, bs, duration, r.resourceId, taxonomyId));
     });
     return ret;
   }, []);
