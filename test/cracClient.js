@@ -97,4 +97,24 @@ describe('cracClient', function() {
       }
     });
   });
+  describe('#calculateWorkloadWeights', function() {
+    it('zero crac-vector has 0 weight', function() {
+      var weights = cracClient.calculateWorkloadWeights([{
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('')
+        }]
+      }]);
+      weights['a'].should.be.equal(0);
+    });
+    it('100 bits crac-vector has 100 weight', function() {
+      var weights = cracClient.calculateWorkloadWeights([{
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('1'.repeat(100))
+        }]
+      }]);
+      weights['a'].should.be.equal(100);
+    });
+  })
 });

@@ -99,6 +99,49 @@ var makeSlots = function (startOffset, slots, taxonomyId, duration) {
   }, []);
 };
 
+/**
+ * 
+ * @see https://stackoverflow.com/questions/43122082/efficiently-count-the-number-of-bits-in-an-integer-in-javascript
+ * @see https://graphics.stanford.edu/~seander/bithacks.html
+ * 
+ * @param n
+ * @returns {number}
+ */
+function bitCount32 (n) {
+  n = n - ((n >> 1) & 0x55555555);
+  n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
+  return ((n + (n >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+}
+
+/**
+ * The calculation workload of resources.
+ * It helpful for a sorting from less loaded resource to most one.
+ * 
+ * A weight of resource is number of "1" bits in bitset.
+ * 
+ * @param slots
+ * @returns {*}
+ */
+var calculateWorkloadWeights = function(slots) {
+  return _.reduce(slots, function (ret, day) {
+    var resourses = day.resources;
+    if (day.excludedResources) {
+      resourses = resourses.filter(function (r) {
+        return day.excludedResources.indexOf(r.resourceId) < 0;
+      });
+    }
+    
+    resourses.forEach(function (r) {
+      var bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset) : r.bitset;
+      ret[r.resourceId] = _.reduce(bs, function(ret, bsi) {
+        return ret + bitCount32(bsi);
+      }, 0);
+    });
+    return ret;
+  }, []);
+};
+
 exports.bitsetStrToInt32Array = bitsetStrToInt32Array;
 exports.getCRACFreeSlots = getCRACFreeSlots;
 exports.makeSlots = makeSlots;
+exports.calculateWorkloadWeights = calculateWorkloadWeights;
