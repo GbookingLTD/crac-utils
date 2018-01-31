@@ -116,5 +116,31 @@ describe('cracClient', function() {
       }]);
       weights['a'].should.be.equal(100);
     });
+    it('2 bitsets in one day but differ resources should not be joint', function() {
+      var weights = cracClient.calculateWorkloadWeights([{
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('1'.repeat(50))
+        }, {
+          resourceId: 'b',
+          bitset: stringCracVector('1'.repeat(50))
+        }]
+      }]);
+      weights['a'].should.be.equal(50);
+    });
+    it('2 bitsets in differ days should be joint', function() {
+      var weights = cracClient.calculateWorkloadWeights([{
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('1'.repeat(50))
+        }]
+      }, {
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('1'.repeat(50))
+        }]
+      }]);
+      weights['a'].should.be.equal(100);
+    });
   })
 });

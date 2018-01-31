@@ -117,7 +117,7 @@ function bitCount32 (n) {
  * The calculation workload of resources.
  * It helpful for a sorting from less loaded resource to most one.
  * 
- * A weight of resource is number of "1" bits in bitset.
+ * A weight of resource is number of "1" bits in all bitsets by all passed days.
  * 
  * @param slots
  * @returns {*}
@@ -133,7 +133,7 @@ var calculateWorkloadWeights = function(slots) {
     
     resourses.forEach(function (r) {
       var bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset) : r.bitset;
-      ret[r.resourceId] = _.reduce(bs, function(ret, bsi) {
+      ret[r.resourceId] = (ret[r.resourceId] || 0) + _.reduce(bs, function(ret, bsi) {
         return ret + bitCount32(bsi);
       }, 0);
     });
