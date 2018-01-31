@@ -1,2 +1,2 @@
-# The CRAC client for NodeJs
+# The GBooking crac-utils library
 
