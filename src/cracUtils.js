@@ -123,7 +123,7 @@ function bitCount32 (n) {
  * @returns {*}
  */
 var calculateWorkloadWeights = function(slots) {
-  return _.reduce(slots, function (ret, day) {
+  return _.values(_.reduce(slots, function (ret, day) {
     var resourses = day.resources;
     if (day.excludedResources) {
       resourses = resourses.filter(function (r) {
@@ -135,6 +135,7 @@ var calculateWorkloadWeights = function(slots) {
       var bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset) : r.bitset;
       if (!ret[r.resourceId]) {
         ret[r.resourceId] = {
+          resourceId: r.resourceId,
           weight: 0,
           firstSlotDate: day.date
         };
@@ -144,7 +145,7 @@ var calculateWorkloadWeights = function(slots) {
       }, 0);
     });
     return ret;
-  }, []);
+  }, {}));
 };
 
 exports.bitsetStrToInt32Array = bitsetStrToInt32Array;

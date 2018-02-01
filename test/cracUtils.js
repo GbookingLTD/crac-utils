@@ -1,5 +1,6 @@
 "use strict";
 
+var _ = require('lodash');
 require('should');
 
 var cracUtils = require('../src/cracUtils');
@@ -105,7 +106,7 @@ describe('cracClient', function() {
           bitset: stringCracVector('')
         }]
       }]);
-      weights['a'].weight.should.be.equal(0);
+      _.find(weights, {resourceId: 'a'}).weight.should.be.equal(0);
     });
     it('100 bits crac-vector has 100 weight', function() {
       var weights = cracUtils.calculateWorkloadWeights([{
@@ -114,7 +115,7 @@ describe('cracClient', function() {
           bitset: stringCracVector('1'.repeat(100))
         }]
       }]);
-      weights['a'].weight.should.be.equal(100);
+      _.find(weights, {resourceId: 'a'}).weight.should.be.equal(100);
     });
     it('2 bitsets in one day but differ resources should not be joint', function() {
       var weights = cracUtils.calculateWorkloadWeights([{
@@ -126,7 +127,7 @@ describe('cracClient', function() {
           bitset: stringCracVector('1'.repeat(50))
         }]
       }]);
-      weights['a'].weight.should.be.equal(50);
+      _.find(weights, {resourceId: 'a'}).weight.should.be.equal(50);
     });
     it('2 bitsets in differ days should be joint', function() {
       var weights = cracUtils.calculateWorkloadWeights([{
@@ -140,7 +141,7 @@ describe('cracClient', function() {
           bitset: stringCracVector('1'.repeat(50))
         }]
       }]);
-      weights['a'].weight.should.be.equal(100);
+      _.find(weights, {resourceId: 'a'}).weight.should.be.equal(100);
     });
     it('2 differ days should return first slot date', function() {
       var weights = cracUtils.calculateWorkloadWeights([{
@@ -156,7 +157,7 @@ describe('cracClient', function() {
           bitset: stringCracVector('')
         }]
       }]);
-      weights['a'].firstSlotDate.should.be.equal('2017-09-03 07:19:32.726Z');
+      _.find(weights, {resourceId: 'a'}).firstSlotDate.should.be.equal('2017-09-03 07:19:32.726Z');
     });
   })
 });
