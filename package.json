@@ -1,6 +1,6 @@
 {
   "name": "crac-utils",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "The GBooking crac-utils library",
   "main": "src/cracUtils.js",
   "scripts": {
