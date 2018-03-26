@@ -5,8 +5,8 @@ var _ = require('lodash');
 var cracTimeUnit = 5;
 
 var bitsetStrToInt32Array = function (s) {
-  if (s.length !== 288) throw Error('string bitset should contain 288 chars');
   s = s.replace(/\./g, '');
+  if (s.length !== 288) throw Error('string bitset should contain 288 chars');
   var bi, bs = [0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (var i = s.length - 1; i >= 0; i--) {
     // i  - char index: from 287 to 0
