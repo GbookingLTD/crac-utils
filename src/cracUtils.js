@@ -132,7 +132,12 @@ var calculateWorkloadWeights = function(slots) {
     }
     
     resourses.forEach(function (r) {
-      var bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset) : r.bitset;
+      var bs;
+      try {
+        bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset) : r.bitset;
+      } catch (e) {
+        bs = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+      }
       if (!ret[r.resourceId]) {
         ret[r.resourceId] = {
           resourceId: r.resourceId,
