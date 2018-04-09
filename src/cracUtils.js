@@ -2,21 +2,39 @@
 
 var _ = require('lodash');
 
-var cracTimeUnit = 5;
+var defaultCracTimeUnit = 5;
 
-var bitsetStrToInt32Array = function (s) {
+var bitsetStrToInt32Array = function (s, cracTimeUnit) {
   s = s.replace(/\./g, '');
-  if (s.length !== 288) throw Error('string bitset should contain 288 chars');
-  var bi, bs = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  for (var i = s.length - 1; i >= 0; i--) {
-    // i  - char index: from 287 to 0
+  cracTimeUnit = cracTimeUnit || defaultCracTimeUnit;
+  var numberOfTimeUnits = Math.ceil(1440 / cracTimeUnit);
+  if (s.length !== numberOfTimeUnits) throw Error('string bitset should contain '+numberOfTimeUnits+' chars');
+  var int32Count = numberOfTimeUnits >> 5;
+  var i, bi, bs = [];
+  // fill bitset array
+  for (i = 0; i < int32Count; ++i) {
+    bs[i] = 0;
+  }
+  for (i = s.length - 1; i >= 0; i--) {
+    // i  - char index: from numberOfTimeUnits - 1 to 0
     // bi - byte index: from 0 to 8
-    bi = (287 - i) >> 5;
+    bi = (numberOfTimeUnits - 1 - i) >> 5;
     bs[bi] = bs[bi] << 1 | (s[i] === "1");
   }
   return bs;
 };
 
+/**
+ * Итерирует CRAC-вектор по битам в нём.
+ * Функция итератора принимает 2 аргумента
+ *  - числовое значение бита
+ *  - смещение этого бита в CRAC векторе
+ * 
+ * @param offset
+ * @param bitset
+ * @param fn
+ * @private
+ */
 var _iterateCRACVector = function (offset, bitset, fn) {
   for (var bi = offset >> 5; bi < bitset.length; bi++) {
     // bi - byte index: from 0 or more to 8
@@ -34,6 +52,16 @@ var _iterateCRACVector = function (offset, bitset, fn) {
   }
 };
 
+/**
+ * Возвращает массив свободных слотов.
+ * Возвращает массив целочисленных значений, каждое из которых означает смещение слота в cracTimeUnit.
+ * Таким образом, чтобы вычислить свободный слот, нужно время начала умножить на cracTimeUnit.
+ * 
+ * @param cracCellOffset смещение в CRAC векторе
+ * @param bitset         CRAC вектор
+ * @param slotCells      количество битов в слоте
+ * @returns {Array}
+ */
 var getCRACFreeSlots = function (cracCellOffset, bitset, slotCells) {
   var freeSlots = [];
   var lenCurSlot = 0;
@@ -66,7 +94,8 @@ var getCRACFreeSlots = function (cracCellOffset, bitset, slotCells) {
   return freeSlots;
 };
 
-function _makeSlots(startOffset, date, bitset, duration, resId, taxId) {
+function _makeSlots(startOffset, date, bitset, duration, resId, taxId, cracTimeUnit) {
+  cracTimeUnit = cracTimeUnit || defaultCracTimeUnit;
   var freeSlots = getCRACFreeSlots(Math.floor(startOffset / cracTimeUnit), bitset, Math.floor(30 / cracTimeUnit));
   var d = new Date(Date.parse(date));
   return freeSlots.map(function (cracOffset) {
@@ -82,7 +111,7 @@ function _makeSlots(startOffset, date, bitset, duration, resId, taxId) {
   });
 }
 
-var makeSlots = function (startOffset, slots, taxonomyId, duration) {
+var makeSlots = function (startOffset, slots, taxonomyId, duration, cracTimeUnit) {
   return _.reduce(slots, function (ret, day) {
     var resourses = day.resources;
     if (day.excludedResources) {
@@ -92,7 +121,7 @@ var makeSlots = function (startOffset, slots, taxonomyId, duration) {
     }
     
     resourses.forEach(function (r) {
-      var bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset) : r.bitset;
+      var bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset, cracTimeUnit) : r.bitset;
       ret = ret.concat(_makeSlots(startOffset, day.date, bs, duration, r.resourceId, taxonomyId));
     });
     return ret;
@@ -120,9 +149,10 @@ function bitCount32 (n) {
  * A weight of resource is number of "1" bits in all bitsets by all passed days.
  * 
  * @param slots
+ * @param cracTimeUnit
  * @returns {*}
  */
-var calculateWorkloadWeights = function(slots) {
+var calculateWorkloadWeights = function(slots, cracTimeUnit) {
   return _.values(_.reduce(slots, function (ret, day) {
     var resourses = day.resources;
     if (day.excludedResources) {
@@ -134,7 +164,7 @@ var calculateWorkloadWeights = function(slots) {
     resourses.forEach(function (r) {
       var bs;
       try {
-        bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset) : r.bitset;
+        bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset, cracTimeUnit) : r.bitset;
       } catch (e) {
         bs = [0, 0, 0, 0, 0, 0, 0, 0, 0];
       }

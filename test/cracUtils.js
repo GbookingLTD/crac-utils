@@ -15,10 +15,11 @@ function reverseString(str) {
     return newString;
 }
 
-function stringCracVector(str) {
+function stringCracVector(str, numberOfTimeUnits) {
+  numberOfTimeUnits = numberOfTimeUnits || 288;
   // string alignment
-  if (str.length < 288) {
-    str += '0'.repeat(288 - str.length);
+  if (str.length < numberOfTimeUnits) {
+    str += '0'.repeat(numberOfTimeUnits - str.length);
   }
   if (cracVectorOrder === 'reverse') {
     str = reverseString(str);
@@ -49,6 +50,12 @@ describe('cracClient', function() {
     it('64th bit string should generate last bit in 2nd byte in bitset', function() {
       var s = stringCracVector('0'.repeat(63) + "1");
       var bs = cracUtils.bitsetStrToInt32Array(s);
+      (bs[1]).should.be.equal(1);
+    });
+    it('change time unit to 1', function() {
+      var s = stringCracVector('0'.repeat(63) + "1", 1440);
+      var bs = cracUtils.bitsetStrToInt32Array(s, 1);
+      bs.should.be.instanceof(Array).and.have.lengthOf(45);
       (bs[1]).should.be.equal(1);
     });
   });
@@ -96,6 +103,14 @@ describe('cracClient', function() {
       for (var i = 0; i < 10; i++) {
         slots[i].should.be.equal(i * 6);
       }
+    });
+    it('crac-vector (timeUnit=1) with 64 of "1" should have (64 / 30) = 2 slots by 30 minutes', function() {
+      var s = stringCracVector('1'.repeat(64), 1440);
+      var bs = cracUtils.bitsetStrToInt32Array(s, 1);
+      var slots = cracUtils.getCRACFreeSlots(0, bs, 30);
+      slots.should.be.instanceof(Array).and.have.lengthOf(2);
+      slots[0].should.be.equal(0);
+      slots[1].should.be.equal(30);
     });
   });
   describe('#calculateWorkloadWeights', function() {
