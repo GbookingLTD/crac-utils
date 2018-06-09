@@ -1,7 +1,7 @@
 "use strict";
 
 var rpcQ = require('./rpcRequest').rpcRequest
-  , makeSlots = require('../src/utils').makeSlots;
+  , makeSlots = require('../dist/cjs/utils').makeSlots;
 
 var getCRACSlots = function (endpoint, businessId, resources, taxonomyId, from, to, duration) {
   var params = [{
