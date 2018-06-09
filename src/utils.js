@@ -1,7 +1,7 @@
 "use strict";
 
 import * as _ from 'lodash';
-import {bitsetStrToInt32Array,getCRACFreeSlots} from "./vector";
+import {zeroBitSets, bitsetStrToInt32Array, getCRACFreeSlots} from "./vector";
 
 function _makeSlots(startOffset, date, bitset, duration, resId, taxId, cracTimeUnit) {
   cracTimeUnit = cracTimeUnit || defaultCracTimeUnit;
@@ -75,7 +75,7 @@ export function calculateWorkloadWeights(slots, cracTimeUnit) {
       try {
         bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset, cracTimeUnit) : r.bitset;
       } catch (e) {
-        bs = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        bs = zeroBitSets[cracTimeUnit];
       }
       if (!ret[r.resourceId]) {
         ret[r.resourceId] = {

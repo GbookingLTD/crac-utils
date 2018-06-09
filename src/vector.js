@@ -3,6 +3,17 @@
 const minutesInDay = 1440;
 const defaultCracTimeUnit = 5;
 
+export const zeroBitSets = {
+  5: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+  1: [
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0
+  ]
+};
+
 /**
  * Convert string bitset into int32 array
  * @param str bitset in string representation
