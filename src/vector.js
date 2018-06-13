@@ -120,11 +120,11 @@ export function iterateCRACVector(bitset, fn, offset, end) {
  * Таким образом, чтобы вычислить свободный слот, нужно время начала умножить на cracTimeUnit.
  * 
  * @param bitset       CRAC вектор
- * @param slotSize     Количество битов в слоте
+ * @param scheduleSlotSize     Количество битов в слоте
  * @param [offset=0]   Смещение в CRAC векторе, считаемое в количестве бит
  * @returns {Array}
  */
-export function getCRACFreeSlots(bitset, slotSize, offset = 0) {
+export function getCRACFreeSlots(bitset, scheduleSlotSize, offset = 0) {
   let freeSlots = [];
   let slotLen = 0;
   let slotOffset = -1;
@@ -145,7 +145,7 @@ export function getCRACFreeSlots(bitset, slotSize, offset = 0) {
       }
     }
     
-    if (slotOffset >= 0 && slotLen >= vectorSlotSize) {
+    if (slotOffset >= 0 && slotLen >= scheduleSlotSize) {
       freeSlots.push(slotOffset);
       slotLen = 0;
       slotOffset = -1;
