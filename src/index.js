@@ -1,11 +1,11 @@
-import {zeroBitSets, bitsetStrToInt32Array, prepareBitset, newZeroBitset, setAnd, setUnion,
+import {defaultVectorSlotSize, zeroBitSets, bitsetStrToInt32Array, prepareBitset, newZeroBitset, setAnd, setUnion,
   iterateCRACVector, getCRACFreeSlots} from "./vector";
-import {makeSlots, calculateWorkloadWeights, getFirstLastMinutes} from './utils';
+import {makeSlots, calculateWorkloadWeights, getFirstLastMinutes, isSlotAvailable} from './utils';
 
 export {
   // export from vector
-  zeroBitSets, bitsetStrToInt32Array, prepareBitset, newZeroBitset, setAnd, setUnion, 
+  defaultVectorSlotSize, zeroBitSets, bitsetStrToInt32Array, prepareBitset, newZeroBitset, setAnd, setUnion, 
   iterateCRACVector, getCRACFreeSlots,
   // export from utils
-  makeSlots, calculateWorkloadWeights, getFirstLastMinutes
+  makeSlots, calculateWorkloadWeights, getFirstLastMinutes, isSlotAvailable
 };

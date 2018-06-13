@@ -2,6 +2,8 @@
 
 import {defaultVectorSlotSize, zeroBitSets, prepareBitset, getCRACFreeSlots} from "./vector";
 
+const INT_BITS = 32;
+
 function _makeSlots(startOffset, date, bitset, duration, resId, taxId, vectorSlotSize) {
   vectorSlotSize = vectorSlotSize || defaultVectorSlotSize;
   let freeSlots = getCRACFreeSlots(Math.floor(startOffset / vectorSlotSize), bitset, Math.floor(30 / vectorSlotSize));
@@ -134,4 +136,26 @@ export function getFirstLastMinutes(bitset, vectorSlotSize) {
     start: startBoundMinutes,
     end: endBoundMinutes
   };
+}
+
+/**
+ * Checking slot availability
+ * 
+ * @param bitset CRAC bitset
+ * @param start start time in minutes
+ * @param end end time in minutes
+ * @param vectorSlotSize CRAC bitset slot size
+ * @returns {boolean} availability
+ */
+export function isSlotAvailable(bitset, start, end, vectorSlotSize) {
+  for (let time = start; time < end; time += vectorSlotSize) {
+    const cracSlotIndex = parseInt(time / vectorSlotSize),
+      bucket = cracSlotIndex >> 5,
+      bitIndex = cracSlotIndex % INT_BITS;
+    const slot = bitset[bucket] & (1 << INT_BITS - bitIndex - 1);
+    if (!slot) {
+      return false;
+    }
+  }
+  return true;
 }

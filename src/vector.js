@@ -2,7 +2,6 @@
 
 export const minutesInDay = 1440;
 export const defaultVectorSlotSize = 5;
-export const INT_BITS = 32;
 
 export const zeroBitSets = {
   5: [0, 0, 0, 0, 0, 0, 0, 0, 0],
