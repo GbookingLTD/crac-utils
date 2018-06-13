@@ -16,11 +16,11 @@ function reverseString(str) {
     return newString;
 }
 
-function stringCracVector(str, numberOfTimeUnits) {
-  numberOfTimeUnits = numberOfTimeUnits || 288;
+function stringCracVector(str, cracVectorSize) {
+  cracVectorSize = cracVectorSize || 288;
   // string alignment
-  if (str.length < numberOfTimeUnits) {
-    str += '0'.repeat(numberOfTimeUnits - str.length);
+  if (str.length < cracVectorSize) {
+    str += '0'.repeat(cracVectorSize - str.length);
   }
   if (cracVectorOrder === 'reverse') {
     str = reverseString(str);
@@ -64,27 +64,27 @@ describe('cracClient', function() {
     it('zero crac-vector should generate empty slots', function() {
       var s = stringCracVector('');
       var bs = vector.bitsetStrToInt32Array(s);
-      var slots = vector.getCRACFreeSlots(0, bs, 30);
+      var slots = vector.getCRACFreeSlots(bs, 30);
       slots.should.be.instanceof(Array).and.have.lengthOf(0);
     });
     it('crac-vector starts with "1" should generate 1 slot with offset 0', function() {
       var s = stringCracVector('1');
       var bs = vector.bitsetStrToInt32Array(s);
-      var slots = vector.getCRACFreeSlots(0, bs, 1);
+      var slots = vector.getCRACFreeSlots(bs, 1);
       slots.should.be.instanceof(Array).and.have.lengthOf(1);
       slots[0].should.be.equal(0);
     });
     it('crac-vector starts with (540 / 5) "1" should have first free slot at 9:00', function() {
       var s = stringCracVector('0'.repeat(540 / 5) + '1');
       var bs = vector.bitsetStrToInt32Array(s);
-      var slots = vector.getCRACFreeSlots(0, bs, 1);
+      var slots = vector.getCRACFreeSlots(bs, 1);
       slots.should.be.instanceof(Array).and.have.lengthOf(1);
       slots[0].should.be.equal(540 / 5);
     });
     it('crac-vector starts with (540 / 5) "1" (12 items) should have 2 slots - 9:00, 9:30', function() {
       var s = stringCracVector('0'.repeat(540 / 5) + '1'.repeat(60 / 5));
       var bs = vector.bitsetStrToInt32Array(s);
-      var slots = vector.getCRACFreeSlots(0, bs, 6);
+      var slots = vector.getCRACFreeSlots(bs, 6);
       slots.should.be.instanceof(Array).and.have.lengthOf(2);
       slots[0].should.be.equal(540 / 5);
       slots[1].should.be.equal(570 / 5);
@@ -92,14 +92,14 @@ describe('cracClient', function() {
     it('crac-vector starts with (540 / 5) "1" (12 items) should except 9:00 slot if startOffset=9:30', function() {
       var s = stringCracVector('0'.repeat(540 / 5) + '1'.repeat(60 / 5));
       var bs = vector.bitsetStrToInt32Array(s);
-      var slots = vector.getCRACFreeSlots(570 / 5, bs, 6);
+      var slots = vector.getCRACFreeSlots(bs, 6, 570 / 5);
       slots.should.be.instanceof(Array).and.have.lengthOf(1);
       slots[0].should.be.equal(570 / 5);
     });
     it('crac-vector with 64 of "1" should have (64 * 5 / 30) = 10 slots by 30 minutes', function() {
       var s = stringCracVector('1'.repeat(64));
       var bs = vector.bitsetStrToInt32Array(s);
-      var slots = vector.getCRACFreeSlots(0, bs, 6);
+      var slots = vector.getCRACFreeSlots(bs, 6);
       slots.should.be.instanceof(Array).and.have.lengthOf(10);
       for (var i = 0; i < 10; i++) {
         slots[i].should.be.equal(i * 6);
@@ -108,7 +108,7 @@ describe('cracClient', function() {
     it('crac-vector (timeUnit=1) with 64 of "1" should have (64 / 30) = 2 slots by 30 minutes', function() {
       var s = stringCracVector('1'.repeat(64), 1440);
       var bs = vector.bitsetStrToInt32Array(s, 1);
-      var slots = vector.getCRACFreeSlots(0, bs, 30);
+      var slots = vector.getCRACFreeSlots(bs, 30);
       slots.should.be.instanceof(Array).and.have.lengthOf(2);
       slots[0].should.be.equal(0);
       slots[1].should.be.equal(30);

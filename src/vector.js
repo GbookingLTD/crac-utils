@@ -1,7 +1,8 @@
 "use strict";
 
-const minutesInDay = 1440;
-const defaultCracTimeUnit = 5;
+export const minutesInDay = 1440;
+export const defaultVectorSlotSize = 5;
+export const INT_BITS = 32;
 
 export const zeroBitSets = {
   5: [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -17,13 +18,13 @@ export const zeroBitSets = {
 /**
  * Convert string bitset into int32 array
  * @param str bitset in string representation
- * @param cracTimeUnit CRAC bitset slot size
+ * @param vectorSlotSize CRAC bitset slot size
  * @returns {Array} int32 bitset
  */
-export function bitsetStrToInt32Array(str, cracTimeUnit) {
+export function bitsetStrToInt32Array(str, vectorSlotSize) {
   str = str.replace(/\./g, '');
-  cracTimeUnit = cracTimeUnit || defaultCracTimeUnit;
-  const numberOfTimeUnits = Math.ceil(minutesInDay / cracTimeUnit);
+  vectorSlotSize = vectorSlotSize || defaultVectorSlotSize;
+  const numberOfTimeUnits = Math.ceil(minutesInDay / vectorSlotSize);
   if (str.length !== numberOfTimeUnits) throw Error('string bitset should contain '+numberOfTimeUnits+' chars');
   const int32Count = numberOfTimeUnits >> 5;
   let i, bi, bs = [];
@@ -40,27 +41,64 @@ export function bitsetStrToInt32Array(str, cracTimeUnit) {
   return bs;
 }
 
+export function prepareBitset(bitset, vectorSlotSize) {
+  return (typeof bitset === "string") ? bitsetStrToInt32Array(bitset, vectorSlotSize) : bitset;
+}
+
+export function newZeroBitset(vectorSlotSize) {
+  return zeroBitSets[vectorSlotSize].slice();
+}
+
+/**
+ * And operation by bit between 2 sets
+ *
+ * @param {Array<Number>} setA
+ * @param {Array<Number>} setB
+ */
+export function setAnd (setA, setB) {
+  var unifiedSet = [];
+  for (var i=0; i< setA.length; i++){
+    unifiedSet[i] = setA[i] & setB[i]
+  }
+  return unifiedSet;
+}
+
+/**
+ * OR operation by bit between 2 sets
+ *
+ * @param {Array<Number>} setA
+ * @param {Array<Number>} setB
+ */
+export function setUnion (setA, setB) {
+  var unifiedSet = [];
+  for (var i=0; i< setA.length; i++){
+    unifiedSet[i] = setA[i] | setB[i]
+  }
+  return unifiedSet;
+}
+
 /**
  * Итерирует CRAC-вектор по битам в нём.
  * Функция итератора принимает 2 аргумента
  *  - числовое значение бита
  *  - смещение этого бита в CRAC векторе
  * 
- * @param offset
  * @param bitset
  * @param fn
- * @private
+ * @param offset
+ * @param end
  */
-function _iterateCRACVector(offset, bitset, fn) {
+export function iterateCRACVector(bitset, fn, offset, end) {
   for (let bi = offset >> 5; bi < bitset.length; bi++) {
     // bi - byte index: from 0 or more to 8
     while (true) {
+      if (end && offset >= end) return;
       // move 1 bit in mask from right to left
       // offset = 0; mask = 1 << 31
       // offset = 1; mask = 1 << 30
       // ...
       // offset = 31; mask = 1 << 0
-      let mask = 1 << (31 - offset) % 32;
+      let mask = 1 << 31 - offset;
       let bit = bitset[bi] & mask;
       fn(bit, offset);
       if (++offset % 32 === 0) break;
@@ -69,43 +107,43 @@ function _iterateCRACVector(offset, bitset, fn) {
 }
 
 /**
- * Возвращает массив свободных слотов.
+ * Возвращает массив свободных слотов в виде массива смещений, относительно начала вектора.
  * Возвращает массив целочисленных значений, каждое из которых означает смещение слота в cracTimeUnit.
  * Таким образом, чтобы вычислить свободный слот, нужно время начала умножить на cracTimeUnit.
  * 
- * @param startOffset  смещение в CRAC векторе, считаемое в количестве бит
  * @param bitset       CRAC вектор
- * @param cracTimeUnit количество битов в слоте
+ * @param vectorSlotSize количество битов в слоте
+ * @param [offset=0]   смещение в CRAC векторе, считаемое в количестве бит
  * @returns {Array}
  */
-export function getCRACFreeSlots(startOffset, bitset, cracTimeUnit) {
+export function getCRACFreeSlots(bitset, vectorSlotSize, offset = 0) {
   let freeSlots = [];
-  let lenCurSlot = 0;
-  let offsetCurSlot = -1;
+  let slotLen = 0;
+  let slotOffset = -1;
   let fn = function (bit, offset) {
-    if (offsetCurSlot < 0) {
+    if (slotOffset < 0) {
       // found first slot bit
       if (bit) {
-        offsetCurSlot = offset;
-        lenCurSlot = 1;
+        slotOffset = offset;
+        slotLen = 1;
       }
     } else {
       // continue crac slot reading
       if (bit === 0) {
-        lenCurSlot = 0;
-        offsetCurSlot = -1;
+        slotLen = 0;
+        slotOffset = -1;
       } else {
-        ++lenCurSlot;
+        ++slotLen;
       }
     }
     
-    if (offsetCurSlot >= 0 && lenCurSlot >= cracTimeUnit) {
-      freeSlots.push(offsetCurSlot);
-      lenCurSlot = 0;
-      offsetCurSlot = -1;
+    if (slotOffset >= 0 && slotLen >= vectorSlotSize) {
+      freeSlots.push(slotOffset);
+      slotLen = 0;
+      slotOffset = -1;
     }
   };
 
-  _iterateCRACVector(startOffset, bitset, fn);
+  iterateCRACVector(bitset, fn, offset);
   return freeSlots;
 }

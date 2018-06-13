@@ -1,14 +1,13 @@
 "use strict";
 
-import * as _ from 'lodash';
-import {zeroBitSets, bitsetStrToInt32Array, getCRACFreeSlots} from "./vector";
+import {defaultVectorSlotSize, zeroBitSets, prepareBitset, getCRACFreeSlots} from "./vector";
 
-function _makeSlots(startOffset, date, bitset, duration, resId, taxId, cracTimeUnit) {
-  cracTimeUnit = cracTimeUnit || defaultCracTimeUnit;
-  let freeSlots = getCRACFreeSlots(Math.floor(startOffset / cracTimeUnit), bitset, Math.floor(30 / cracTimeUnit));
+function _makeSlots(startOffset, date, bitset, duration, resId, taxId, vectorSlotSize) {
+  vectorSlotSize = vectorSlotSize || defaultVectorSlotSize;
+  let freeSlots = getCRACFreeSlots(Math.floor(startOffset / vectorSlotSize), bitset, Math.floor(30 / vectorSlotSize));
   var bod = new Date(Date.parse(date));
   return freeSlots.map(function (cracOffset) {
-    var offsetMinutes = cracOffset * cracTimeUnit;
+    var offsetMinutes = cracOffset * vectorSlotSize;
     var curD = new Date(bod);
     curD.setUTCMinutes(offsetMinutes);
     return {
@@ -20,8 +19,8 @@ function _makeSlots(startOffset, date, bitset, duration, resId, taxId, cracTimeU
   });
 }
 
-export function makeSlots(startOffset, slots, taxonomyId, duration, cracTimeUnit) {
-  return _.reduce(slots, function (ret, day) {
+export function makeSlots(startOffset, slots, taxonomyId, duration, vectorSlotSize) {
+  return slots.reduce(function (ret, day) {
     var resourses = day.resources;
     if (day.excludedResources) {
       resourses = resourses.filter(function (r) {
@@ -30,7 +29,7 @@ export function makeSlots(startOffset, slots, taxonomyId, duration, cracTimeUnit
     }
     
     resourses.forEach(function (r) {
-      var bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset, cracTimeUnit) : r.bitset;
+      var bs = prepareBitset(r.bitset, vectorSlotSize);
       ret = ret.concat(_makeSlots(startOffset, day.date, bs, duration, r.resourceId, taxonomyId));
     });
     return ret;
@@ -58,11 +57,11 @@ function bitCount32 (n) {
  * A weight of resource is number of "1" bits in all bitsets by all passed days.
  * 
  * @param slots
- * @param cracTimeUnit
+ * @param vectorSlotSize
  * @returns {*}
  */
-export function calculateWorkloadWeights(slots, cracTimeUnit) {
-  return _.values(_.reduce(slots, function (ret, day) {
+export function calculateWorkloadWeights(slots, vectorSlotSize) {
+  return Object.values(slots.reduce(function (ret, day) {
     var resourses = day.resources;
     if (day.excludedResources) {
       resourses = resourses.filter(function (r) {
@@ -73,9 +72,9 @@ export function calculateWorkloadWeights(slots, cracTimeUnit) {
     resourses.forEach(function (r) {
       var bs;
       try {
-        bs = (typeof r.bitset === "string") ? bitsetStrToInt32Array(r.bitset, cracTimeUnit) : r.bitset;
+        bs = prepareBitset(r.bitset, vectorSlotSize);
       } catch (e) {
-        bs = zeroBitSets[cracTimeUnit];
+        bs = zeroBitSets[vectorSlotSize];
       }
       if (!ret[r.resourceId]) {
         ret[r.resourceId] = {
@@ -84,10 +83,55 @@ export function calculateWorkloadWeights(slots, cracTimeUnit) {
           firstSlotDate: day.date
         };
       }
-      ret[r.resourceId].weight = ret[r.resourceId].weight + _.reduce(bs, function(ret, bsi) {
+      ret[r.resourceId].weight = ret[r.resourceId].weight + bs.reduce(function(ret, bsi) {
         return ret + bitCount32(bsi);
       }, 0);
     });
     return ret;
   }, {}));
+}
+
+function minutesFromBitset(bucket, slotIndex, vectorSlotSize) {
+  return ((bucket << 5) + slotIndex) * vectorSlotSize;
+}
+
+/**
+ * Calculate start and end time
+ *
+ * @param bitset CRAC bitset
+ * @param vectorSlotSize CRAC bitset slot size
+ * @returns {{start: *, end: *}}
+ */
+export function getFirstLastMinutes(bitset, vectorSlotSize) {
+  let startBoundMinutes, endBoundMinutes;
+  let startBoundBucket, startBoundIndex, endBoundBucket, endBoundIndex;
+  for (let bucket = 1; bucket <= bitset.length; bucket++) {
+    if (bitset[bucket] === 0) {
+      continue;
+    }
+    for (let slotIndex = INT_BITS - 1; slotIndex !== 0; slotIndex--) {
+      const bit1 = bitset[bucket] & (1 << slotIndex);
+      if (bit1) {
+        if (!startBoundIndex) {
+          startBoundBucket = bucket;
+          startBoundIndex = INT_BITS - slotIndex - 1;
+        }
+
+        endBoundBucket = bucket;
+        endBoundIndex = INT_BITS - slotIndex - 1;
+      }
+    }
+  }
+
+  if (startBoundIndex) {
+    startBoundMinutes = minutesFromBitset(startBoundBucket, startBoundIndex, vectorSlotSize);
+  }
+  if (endBoundIndex) {
+    endBoundMinutes = minutesFromBitset(endBoundBucket, endBoundIndex + 1, vectorSlotSize);
+  }
+
+  return {
+    start: startBoundMinutes,
+    end: endBoundMinutes
+  };
 }
