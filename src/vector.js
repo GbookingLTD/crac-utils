@@ -3,7 +3,7 @@
 export const minutesInDay = 1440;
 export const defaultVectorSlotSize = 5;
 
-export const zeroBitSets = {
+export const busyBitSets = {
   5: [0, 0, 0, 0, 0, 0, 0, 0, 0],
   1: [
     0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -12,6 +12,11 @@ export const zeroBitSets = {
     0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0
   ]
+};
+
+export const freeBitSets = {
+  5: busyBitSets[5].map(num => ~num),
+  0: busyBitSets[0].map(num => ~num),
 };
 
 /**
@@ -44,8 +49,12 @@ export function prepareBitset(bitset, vectorSlotSize) {
   return (typeof bitset === "string") ? bitsetStrToInt32Array(bitset, vectorSlotSize) : bitset;
 }
 
-export function newZeroBitset(vectorSlotSize) {
-  return zeroBitSets[vectorSlotSize].slice();
+export function newBusyBitset(vectorSlotSize) {
+  return busyBitSets[vectorSlotSize].slice();
+}
+
+export function newFreeBitset(vectorSlotSize) {
+  return freeBitSets[vectorSlotSize].slice();
 }
 
 /**
@@ -111,11 +120,11 @@ export function iterateCRACVector(bitset, fn, offset, end) {
  * Таким образом, чтобы вычислить свободный слот, нужно время начала умножить на cracTimeUnit.
  * 
  * @param bitset       CRAC вектор
- * @param vectorSlotSize количество битов в слоте
- * @param [offset=0]   смещение в CRAC векторе, считаемое в количестве бит
+ * @param slotSize     Количество битов в слоте
+ * @param [offset=0]   Смещение в CRAC векторе, считаемое в количестве бит
  * @returns {Array}
  */
-export function getCRACFreeSlots(bitset, vectorSlotSize, offset = 0) {
+export function getCRACFreeSlots(bitset, slotSize, offset = 0) {
   let freeSlots = [];
   let slotLen = 0;
   let slotOffset = -1;
