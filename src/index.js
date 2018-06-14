@@ -1,11 +1,13 @@
 import {defaultVectorSlotSize, busyBitSets, freeBitSets, newBusyBitset, newFreeBitset,
   bitsetStrToInt32Array, prepareBitset, setAnd, setUnion, iterateCRACVector, getCRACFreeSlots} from "./vector";
-import {makeSlots, calculateWorkloadWeights, getFirstLastMinutes, isSlotAvailable} from './utils';
+import {makeSlots, calculateWorkloadWeights, getFirstLastMinutes, isSlotAvailable, buildBookingCRACVector,
+  buildSequenceBookingCRACVector} from './utils';
 
 export {
   // export from vector
   defaultVectorSlotSize, busyBitSets, freeBitSets, newBusyBitset, newFreeBitset, bitsetStrToInt32Array, prepareBitset,
   setAnd, setUnion, iterateCRACVector, getCRACFreeSlots,
   // export from utils
-  makeSlots, calculateWorkloadWeights, getFirstLastMinutes, isSlotAvailable
+  makeSlots, calculateWorkloadWeights, getFirstLastMinutes, isSlotAvailable, buildBookingCRACVector,
+  buildSequenceBookingCRACVector
 };

@@ -63,9 +63,9 @@ export function newFreeBitset(vectorSlotSize) {
  * @param {Array<Number>} setA
  * @param {Array<Number>} setB
  */
-export function setAnd (setA, setB) {
-  var unifiedSet = [];
-  for (var i=0; i< setA.length; i++){
+export function setAnd(setA, setB) {
+  let unifiedSet = [];
+  for (let i = 0; i < setA.length; i++) {
     unifiedSet[i] = setA[i] & setB[i]
   }
   return unifiedSet;
@@ -77,9 +77,9 @@ export function setAnd (setA, setB) {
  * @param {Array<Number>} setA
  * @param {Array<Number>} setB
  */
-export function setUnion (setA, setB) {
-  var unifiedSet = [];
-  for (var i=0; i< setA.length; i++){
+export function setUnion(setA, setB) {
+  let unifiedSet = [];
+  for (let i = 0; i < setA.length; i++) {
     unifiedSet[i] = setA[i] | setB[i]
   }
   return unifiedSet;
