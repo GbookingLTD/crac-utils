@@ -297,5 +297,18 @@ describe('utils', function () {
       let result = utils.buildSequenceBookingCRACVector(bitsets, [50, 100, 150], 5);
       result[0].should.be.equal(utils.mask_left1[10]);
     });
+    it('3 bitsets with break in first', function () {
+      let bitsets = [
+        vector.newBusyBitset(5),
+        vector.newBusyBitset(5),
+        vector.newBusyBitset(5)
+      ];
+      
+      bitsets[0][0] = (utils.mask_left1[10] & ~(1 << 23)) >>> 0;
+      utils._fill1(bitsets[1], 0, 10, 20);
+      utils._fill1(bitsets[2], 0, 30, 30);
+      let result = utils.buildSequenceBookingCRACVector(bitsets, [50, 100, 150], 5);
+      result[0].should.be.equal(bitsets[0][0]);
+    });
   });
 });
