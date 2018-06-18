@@ -1,6 +1,6 @@
 "use strict";
 
-import {defaultVectorSlotSize, busyBitSets, prepareBitset, iterateCRACVector, getCRACFreeSlots, 
+import {defaultVectorSlotSize, busyBitSets, prepareBitset, getCRACFreeSlots, 
   newBusyBitset, newFreeBitset, setAnd} from "./vector";
 
 const INT32_SIZE = 32;
@@ -140,28 +140,6 @@ export function getFirstLastMinutes(bitset, vectorSlotSize) {
 }
 
 /**
- * Checking slot availability
- * 
- * @param bitset CRAC bitset
- * @param start start time in minutes
- * @param end end time in minutes
- * @param vectorSlotSize CRAC bitset slot size
- * @returns {boolean} availability
- */
-export function isSlotAvailable(bitset, start, end, vectorSlotSize) {
-  for (let time = start; time < end; time += vectorSlotSize) {
-    const cracSlotIndex = parseInt(time / vectorSlotSize),
-      bucket = cracSlotIndex >> 5,
-      bitIndex = cracSlotIndex % INT32_SIZE;
-    const bit = bitset[bucket] & (1 << INT32_SIZE - bitIndex - 1);
-    if (!bit) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
  * Находит позицию первой 1 в векторе. 
  * Направление битов - слева направо (от старших к младшим разрядам), поэтому возможно использовать clz внутри числа.
  * 
@@ -244,21 +222,54 @@ return m;
 /**
  * Заполнение результирующего вектора 1.
  * 
- * @param dist crac-вектор
+ * @param bitset crac-вектор
  * @param i    начальное смещение элементов массива
  * @param b    начальное смещение в битах в элементе массива
  * @param count количество бит, которое необходимо заполнить
  * @private
  */
-export function _fill1 (dist, i, b, count) {
+export function _fill1 (bitset, i, b, count) {
   let left_bound = b;
   let right_bound = Math.min(count + b, INT32_SIZE);
-  for (;i < dist.length && count > 0; ++i) {
-    dist[i] = (dist[i] | mask_left1[right_bound] & mask_right1[INT32_SIZE - left_bound]) >>> 0;
+  for (;i < bitset.length && count > 0; ++i) {
+    bitset[i] = (
+      bitset[i] | 
+      mask_left1[right_bound] & mask_right1[INT32_SIZE - left_bound]
+    ) >>> 0;
     count -= right_bound - left_bound;
     left_bound = 0;
     right_bound = count >= INT32_SIZE ? INT32_SIZE : count;
   }
+}
+
+/**
+ * Checking slot availability
+ * 
+ * @param bitset CRAC bitset
+ * @param start start time in minutes
+ * @param end end time in minutes (not inclusive)
+ * @param vectorSlotSize CRAC bitset slot size
+ * @returns {boolean} availability
+ */
+export function isSlotAvailable(bitset, start, end, vectorSlotSize) {
+  let cracSlotIndex = Math.floor(start / vectorSlotSize),
+      i = cracSlotIndex >> 5,
+      b = cracSlotIndex % INT32_SIZE,
+      count = Math.ceil((end - start) / vectorSlotSize);
+  
+  if (count === 0) return false;
+  
+  let left_bound = b;
+  let right_bound = Math.min(count + b, INT32_SIZE);
+  for (;i < bitset.length && count > 0; ++i) {
+    let slot_mask = (mask_left1[right_bound] & mask_right1[INT32_SIZE - left_bound]) >>> 0;
+    if (((bitset[i] | slot_mask) ^ bitset[i]) >>> 0) return false;
+    count -= right_bound - left_bound;
+    left_bound = 0;
+    right_bound = count >= INT32_SIZE ? INT32_SIZE : count;
+  }
+  
+  return true;
 }
 
 /**

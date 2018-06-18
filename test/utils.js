@@ -137,6 +137,45 @@ describe('utils', function () {
       bitset[2].should.be.equal(utils.mask_left1[32 - 5]);
     });
   });
+  describe.only('isSlotAvailable', function () {
+    it('0 duration should not be available', function () {
+      let bitset = vector.newBusyBitset(5);
+      utils.isSlotAvailable(bitset, 0, 0, 5).should.be.equal(false);
+    });
+    it('zero bitset should not be available', function () {
+      let bitset = vector.newBusyBitset(5);
+      utils.isSlotAvailable(bitset, 0, 5, 5).should.be.equal(false);
+    });
+    it('first bit should be available if duration contains', function () {
+      let bitset = vector.newBusyBitset(5);
+      bitset[0] = (1 << 31) >>> 0;
+      utils.isSlotAvailable(bitset, 0, 5, 5).should.be.equal(true);
+    });
+    it('first bit should be not available if duration out of range', function () {
+      let bitset = vector.newBusyBitset(5);
+      bitset[0] = (1 << 31) >>> 0;
+      utils.isSlotAvailable(bitset, 0, 6, 5).should.be.equal(false);
+    });
+    
+    it('several bits should be available if duration contains', function () {
+      let bitset = vector.newBusyBitset(5);
+      bitset[0] = (utils.mask_left1[10] & ~utils.mask_left1[5]) >>> 1;
+      utils.isSlotAvailable(bitset, 30, 45, 5).should.be.equal(true);
+    });
+    it('several bits throw int32 bounds should be available if duration contains', function () {
+      let bitset = vector.newBusyBitset(5);
+      bitset[0] = utils.mask_right1[2];
+      bitset[1] = utils.mask_left1[3];
+      utils.isSlotAvailable(bitset, 150, 175, 5).should.be.equal(true);
+      utils.isSlotAvailable(bitset, 150, 180, 5).should.be.equal(false);
+    });
+    it('find last bits', function () {
+      let bitset = vector.newBusyBitset(5);
+      bitset[8] = utils.mask_right1[3];
+      utils.isSlotAvailable(bitset, 1440 - 15, 1440, 5).should.be.equal(true);
+      utils.isSlotAvailable(bitset, 1440 - 20, 1440, 5).should.be.equal(false);
+    });
+  });
   describe('buildBookingCRACVector', function () {
     it('build from zero bitset should be zero array', function() {
       let bitset = vector.newBusyBitset(5);
