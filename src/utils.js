@@ -108,28 +108,34 @@ function minutesFromBitset(bucket, slotIndex, vectorSlotSize) {
 export function getFirstLastMinutes(bitset, vectorSlotSize) {
   let startBoundMinutes, endBoundMinutes;
   let startBoundBucket, startBoundIndex, endBoundBucket, endBoundIndex;
-  for (let bucket = 1; bucket <= bitset.length; bucket++) {
-    if (bitset[bucket] === 0) {
-      continue;
-    }
-    for (let slotIndex = INT32_SIZE - 1; slotIndex !== 0; slotIndex--) {
-      const bit1 = bitset[bucket] & (1 << slotIndex);
-      if (bit1) {
-        if (!startBoundIndex) {
-          startBoundBucket = bucket;
-          startBoundIndex = INT32_SIZE - slotIndex - 1;
-        }
-
-        endBoundBucket = bucket;
-        endBoundIndex = INT32_SIZE - slotIndex - 1;
-      }
+  for (let i = 0; i < bitset.length; ++i) {
+    let b = Math.clz32(bitset[i]);
+    if (b < INT32_SIZE) {
+      startBoundBucket = i;
+      startBoundIndex = b;
+      break;
     }
   }
-
-  if (startBoundIndex) {
+  
+  for (let i = bitset.length - 1; i >= startBoundBucket; --i) {
+    if (bitset[i]) {
+      for (let b = INT32_SIZE - 1; b >= 0; --b) {
+        let bit = bitset[i] & (1 << INT32_SIZE - b - 1);
+        if (bit) {
+          endBoundBucket = i;
+          endBoundIndex = b;
+          break;
+        } 
+      }
+      
+      if (endBoundIndex) break;
+    }
+  }
+  
+  if (typeof startBoundIndex !== 'undefined') {
     startBoundMinutes = minutesFromBitset(startBoundBucket, startBoundIndex, vectorSlotSize);
   }
-  if (endBoundIndex) {
+  if (typeof endBoundIndex !== 'undefined') {
     endBoundMinutes = minutesFromBitset(endBoundBucket, endBoundIndex + 1, vectorSlotSize);
   }
 

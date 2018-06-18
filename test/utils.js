@@ -7,6 +7,31 @@ const vector = require('../dist/cjs/vector');
 const utils = require('../dist/cjs/utils');
 
 describe('utils', function () {
+  describe('getFirstLastMinutes', function () {
+    it('zero bitset should return undefined', function () {
+      let bitset = vector.newBusyBitset(5)
+      utils.getFirstLastMinutes(bitset, 5).should.have.properties({
+        start: undefined,
+        end: undefined
+      });
+    });
+    it('full bitset should return first, last bits', function () {
+      let bitset = vector.newFreeBitset(5);
+      utils.getFirstLastMinutes(bitset, 5).should.have.properties({
+        start: 0,
+        end: 1440
+      });
+    });
+    it('full bitset except first, last items', function () {
+      let bitset = vector.newFreeBitset(5);
+      bitset[0] = 0;
+      bitset[8] = 0;
+      utils.getFirstLastMinutes(bitset, 5).should.have.properties({
+        start: 32 * 5,
+        end: 1440 - 32 * 5
+      });
+    });
+  });
   describe('_find1', function () {
     it('find first bit', function () {
       let p = {i: 0, b: 0};
