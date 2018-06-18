@@ -137,7 +137,7 @@ describe('utils', function () {
       bitset[2].should.be.equal(utils.mask_left1[32 - 5]);
     });
   });
-  describe.only('isSlotAvailable', function () {
+  describe('isSlotAvailable', function () {
     it('0 duration should not be available', function () {
       let bitset = vector.newBusyBitset(5);
       utils.isSlotAvailable(bitset, 0, 0, 5).should.be.equal(false);
