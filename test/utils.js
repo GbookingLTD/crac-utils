@@ -285,7 +285,7 @@ describe('utils', function () {
       let result = utils.buildSequenceBookingCRACVector(bitsets, [50, 100], 5);
       result[0].should.be.equal(utils.mask_left1[20]);
     });
-    it.only('3 bitsets with out of int32 should return vector with first bit', function () {
+    it('3 bitsets with out of int32 should return vector with first bit', function () {
       let bitsets = [
         vector.newBusyBitset(5),
         vector.newBusyBitset(5),
