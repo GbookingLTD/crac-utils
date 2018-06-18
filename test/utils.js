@@ -263,7 +263,7 @@ describe('utils', function () {
       let result = utils.buildSequenceBookingCRACVector(bitsets, [5, 10, 15], 5);
       result[0].should.be.equal(utils.mask_left1[1]);
     });
-    it('3 bitsets with break BETWEEN bitsets should return zero vector with first bit', function () {
+    it('3 bitsets with break BETWEEN bitsets', function () {
       let bitsets = [
         vector.newBusyBitset(5),
         vector.newBusyBitset(5),
@@ -285,7 +285,7 @@ describe('utils', function () {
       let result = utils.buildSequenceBookingCRACVector(bitsets, [50, 100], 5);
       result[0].should.be.equal(utils.mask_left1[20]);
     });
-    it('3 bitsets with out of int32 should return vector with first bit', function () {
+    it('3 bitsets with out of int32', function () {
       let bitsets = [
         vector.newBusyBitset(5),
         vector.newBusyBitset(5),
