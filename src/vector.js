@@ -15,8 +15,8 @@ export const busyBitSets = {
 };
 
 export const freeBitSets = {
-  5: busyBitSets[5].map(num => ~num),
-  0: busyBitSets[0].map(num => ~num),
+  5: busyBitSets[5].map(num => ~num >>> 0),
+  1: busyBitSets[1].map(num => ~num >>> 0),
 };
 
 /**
@@ -66,7 +66,7 @@ export function newFreeBitset(vectorSlotSize) {
 export function setAnd(setA, setB) {
   let unifiedSet = [];
   for (let i = 0; i < setA.length; i++) {
-    unifiedSet[i] = setA[i] & setB[i]
+    unifiedSet[i] = (setA[i] & setB[i]) >>> 0;
   }
   return unifiedSet;
 }
@@ -80,7 +80,7 @@ export function setAnd(setA, setB) {
 export function setUnion(setA, setB) {
   let unifiedSet = [];
   for (let i = 0; i < setA.length; i++) {
-    unifiedSet[i] = setA[i] | setB[i]
+    unifiedSet[i] = (setA[i] | setB[i]) >>> 0;
   }
   return unifiedSet;
 }
@@ -96,7 +96,7 @@ export function setUnion(setA, setB) {
  * @param offset
  * @param end
  */
-export function iterateCRACVector(bitset, fn, offset, end) {
+export function iterateCRACVector(bitset, fn, offset = 0, end = undefined) {
   for (let bi = offset >> 5; bi < bitset.length; bi++) {
     // bi - byte index: from 0 or more to 8
     while (true) {

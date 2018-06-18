@@ -28,7 +28,7 @@ function stringCracVector(str, cracVectorSize) {
   return str;
 }
 
-describe('cracClient', function() {
+describe('vector', function() {
   describe('#bitsetStrToInt32Array', function() {
     it('100 of "0" string is zero bitset', function() {
       var s = stringCracVector('0'.repeat(100));

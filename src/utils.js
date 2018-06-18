@@ -1,16 +1,17 @@
 "use strict";
 
-import {defaultVectorSlotSize, zeroBitSets, prepareBitset, getCRACFreeSlots, newBusyBitset} from "./vector";
+import {defaultVectorSlotSize, busyBitSets, prepareBitset, iterateCRACVector, getCRACFreeSlots, 
+  newBusyBitset, newFreeBitset, setAnd} from "./vector";
 
 const INT32_SIZE = 32;
 
 function _makeSlots(startOffset, date, bitset, duration, resId, taxId, vectorSlotSize) {
   vectorSlotSize = vectorSlotSize || defaultVectorSlotSize;
   let freeSlots = getCRACFreeSlots(Math.floor(startOffset / vectorSlotSize), bitset, Math.floor(30 / vectorSlotSize));
-  var bod = new Date(Date.parse(date));
+  let bod = new Date(Date.parse(date));
   return freeSlots.map(function (cracOffset) {
-    var offsetMinutes = cracOffset * vectorSlotSize;
-    var curD = new Date(bod);
+    let offsetMinutes = cracOffset * vectorSlotSize;
+    let curD = new Date(bod);
     curD.setUTCMinutes(offsetMinutes);
     return {
       resourceId: resId,
@@ -23,14 +24,14 @@ function _makeSlots(startOffset, date, bitset, duration, resId, taxId, vectorSlo
 
 export function makeSlots(startOffset, slots, taxonomyId, duration, vectorSlotSize) {
   return slots.reduce(function (ret, day) {
-    var resourses = day.resources;
+    let resources = day.resources;
     if (day.excludedResources) {
-      resourses = resourses.filter(function (r) {
+      resources = resources.filter(function (r) {
         return day.excludedResources.indexOf(r.resourceId) < 0;
       });
     }
     
-    resourses.forEach(function (r) {
+    resources.forEach(function (r) {
       var bs = prepareBitset(r.bitset, vectorSlotSize);
       ret = ret.concat(_makeSlots(startOffset, day.date, bs, duration, r.resourceId, taxonomyId));
     });
@@ -64,19 +65,19 @@ function bitCount32 (n) {
  */
 export function calculateWorkloadWeights(slots, vectorSlotSize) {
   return Object.values(slots.reduce(function (ret, day) {
-    var resourses = day.resources;
+    let resources = day.resources;
     if (day.excludedResources) {
-      resourses = resourses.filter(function (r) {
+      resources = resources.filter(function (r) {
         return day.excludedResources.indexOf(r.resourceId) < 0;
       });
     }
     
-    resourses.forEach(function (r) {
-      var bs;
+    resources.forEach(function (r) {
+      let bs;
       try {
         bs = prepareBitset(r.bitset, vectorSlotSize);
       } catch (e) {
-        bs = zeroBitSets[vectorSlotSize];
+        bs = busyBitSets[vectorSlotSize];
       }
       if (!ret[r.resourceId]) {
         ret[r.resourceId] = {
@@ -164,6 +165,8 @@ export function isSlotAvailable(bitset, start, end, vectorSlotSize) {
  * Находит позицию первой 1 в векторе. 
  * Направление битов - слева направо (от старших к младшим разрядам), поэтому возможно использовать clz внутри числа.
  * 
+ * Если не найдено 1 - возвращаем отрицательное число.
+ * 
  * @param {{i:number, b:number}} p
  * @param vector
  * @return {*}
@@ -173,7 +176,7 @@ export function _find1 (p, vector) {
   while (p.i < vector.length) {
     p.b = Math.clz32(vector[p.i] << p.b) + p.b;
     // все 0 - проверяем следующее число
-    if (p.b === 32) {
+    if (p.b >= 32) {
       p.b = 0;
       ++p.i;
       continue;
@@ -183,47 +186,79 @@ export function _find1 (p, vector) {
     return 0;
   }
   
-  // весь вектор заполнен 0
+  // весь вектор заполнен 0, возвращаем отрицательное число
   return -1;
 }
 
 /**
- * маски левых единиц от 0 до 32-х.
+ * Маски левых (старших) единиц от 0 до 32-х (33 элемента в массиве).
+ * 
+ * 0-й элемент соответствует нулю единиц слева, начиная от 32-й позиции.
+ * 1-й элемент соответствует одной единице слева на 32-й позиции и тд. до 32-х.
+ * 32-й элемент соответствует 32-м единицам от 32-й до крайней правой позиции.
  * 
  * @type {{}}
  */
-const mask_left1 = {
-  // todo fill mask_left1
-};
+export const mask_left1 = [
+  0,2147483648,3221225472,3758096384,
+  4026531840,4160749568,4227858432,4261412864,
+  4278190080,4286578688,4290772992,4292870144,
+  4293918720,4294443008,4294705152,4294836224,
+  4294901760,4294934528,4294950912,4294959104,
+  4294963200,4294965248,4294966272,4294966784,
+  4294967040,4294967168,4294967232,4294967264,
+  4294967280,4294967288,4294967292,4294967294,
+  4294967295
+];
+
 
 /**
- * маски правых единиц от 0 до 32-х.
+ * Маски правых (младших) единиц от 0 до 32-х (33 элемента в массиве).
  * 
  * @type {{}}
  */
-const mask_right1 = {
-  // todo fill mask_right1
-};
+export const mask_right1 = [
+  0,1,3,7,
+  15,31,63,127,
+  255,511,1023,2047,
+  4095,8191,16383,32767,
+  65535,131071,262143,524287,
+  1048575,2097151,4194303,8388607,
+  16777215,33554431,67108863,134217727,
+  268435455,536870911,1073741823,2147483647,
+  4294967295
+];
+
+/*
+(() => {
+let m = new Array(33);
+m[0] = 0;
+for (let i = 0; i < 32; ++i) {
+  // m[32 - i] = (0xffffffff << i) >>> 0; // for mask_left1
+  m[32 - i] = 0xffffffff >>> i; // for mask_right1
+}
+return m;
+})()
+*/
 
 /**
  * Заполнение результирующего вектора 1.
  * 
- * @param dist
- * @param i
- * @param b
- * @param count
+ * @param dist crac-вектор
+ * @param i    начальное смещение элементов массива
+ * @param b    начальное смещение в битах в элементе массива
+ * @param count количество бит, которое необходимо заполнить
  * @private
  */
 export function _fill1 (dist, i, b, count) {
-  let k = Math.floor(count / INT32_SIZE);
-  dist[i] = dist[i] | mask_right1[b];
-  do {
-    dist[i] = dist[i] | mask_left1[count > INT32_SIZE ? 32 : count % INT32_SIZE];
-    b = 0;
-    ++i;
-    --k;
-    count -= INT32_SIZE;
-  } while (k >= 0 && i < dist.length);
+  let left_bound = b;
+  let right_bound = Math.min(count + b, INT32_SIZE);
+  for (;i < dist.length && count > 0; ++i) {
+    dist[i] = (dist[i] | mask_left1[right_bound] & mask_right1[INT32_SIZE - left_bound]) >>> 0;
+    count -= right_bound - left_bound;
+    left_bound = 0;
+    right_bound = count >= INT32_SIZE ? INT32_SIZE : count;
+  }
 }
 
 /**
@@ -244,32 +279,34 @@ export function _fill1 (dist, i, b, count) {
  * @param bitset
  * @param offset смещение в crac-векторе
  * @param sz
+ * @param vectorSlotSize
  */
-export function buildBookingCRACVector(bitset, offset, sz) {
-  let r = newBusyBitset();
+export function buildBookingCRACVector(bitset, offset, sz, vectorSlotSize) {
+  let r = newBusyBitset(vectorSlotSize);
   let p = {};
   p.i = Math.floor(offset / INT32_SIZE);
-  p.b = offset % INT32_SIZE - 1;
+  p.b = offset % INT32_SIZE;
   
-  const inverseBitset = bitset.map(n => ~n);
-  
+  const inverseBitset = bitset.map(n => (~n)>>>0);
   while (p.i < bitset.length) {
-    // находим первую 1 ("свободный" бит)
-    // если достигнут конец входного вектора, то возвращаем результирующий вектор
+    // Находим первую 1 ("свободный" бит).
+    // Если достигнут конец входного вектора, то возвращаем результирующий вектор.
     if (_find1(p, bitset) < 0) return r;
 
-    // все биты до него заняты (вектор r и так заполнен 0)
+    // Все биты до него заняты. 
+    // Вектор r и так заполнен 0, поэтому заполнения 0 не требуется.
 
-    // находим первый 0 ("занятый" бит), начиная с текущей позиции
+    // Находим первый 0 ("занятый" бит), начиная с текущей позиции.
+    // Если "занятый" бит не был найден, то берём весь оставшийся вектор.
     let pp = {i: p.i, b: p.b};
     _find1(p, inverseBitset);
     
-    // находим количество бит, которое нужно заполнить
+    // Находим количество бит, которое нужно заполнить
     let prevPos = pp.i * INT32_SIZE + pp.b;
     let pos = p.i * INT32_SIZE + p.b;
-    let fillCount = pos - sz - prevPos;
+    let fillCount = pos - prevPos - sz + 1;
     if (fillCount > 0) {
-      // заполняем результирующий вектор 1
+      // Заполняем результирующий вектор 1
       _fill1(r, pp.i, pp.b, fillCount);
     }
   }
@@ -278,54 +315,74 @@ export function buildBookingCRACVector(bitset, offset, sz) {
 }
 
 /**
- * Сдвигаем все биты crac-вектора на shift позиций влево.
+ * Сдвигает все биты crac-вектора на shift позиций влево.
+ * Изменяет входящий массив и возвращает изменённый массив.
  * 
  * Функция имеет сложность O(n), n - количество элементов в массиве.
  * 
- * @param bitset
- * @param shift
+ * @param {Array<Number>} bitset
+ * @param {Number} shift
+ * @return {Array<Number>}
  * @private
  */
-function _vectorLeftShift(bitset, shift) {
+export function _vectorLeftShift(bitset, shift) {
   let k = Math.floor(shift / INT32_SIZE);
   if (k) {
+    // Если смещение превышает 32, то смещаем числа на k элементов. 
+    // Остальлные элементы заполяем 0.
     for (let i = 0; i < bitset.length - k; ++i) {
       bitset[i] = bitset[i + k];
     }
+    for (let i = bitset.length - k; i < bitset.length; ++i) {
+      bitset[i] = 0;
+    }
   }
   
-  let leftBits, prevLeftBits, b = shift % INT32_SIZE - 1;
-  for (let i = bitset.length - k; i >= 0; --i) {
-    leftBits = bitset[i] >> b; // здесь нужно заполнить правые нулями
-    bitset[i] = bitset[i] << b | leftBits;
-    prevLeftBits = leftBits;
+  let leftBits = 0 
+    , prevLeftBits
+    , b = shift % INT32_SIZE;
+  for (let i = bitset.length - k - 1; i >= 0; --i) {
+    // Берём левые биты текущего числа, переносим их направо, чтобы сохранить в нижних регистрах следующего числа.
+    prevLeftBits = (bitset[i] >>> INT32_SIZE - b) & mask_right1[b];
+    bitset[i] = (bitset[i] << b | leftBits) >>> 0;
+    leftBits = prevLeftBits;
   }
+  
+  return bitset;
 }
 
-
 /**
- * Строит вектор возможности записи на непрерывную последовательность услуг. 
+ * Строит вектор возможности записи на непрерывную последовательность услуг.
  * 
- * @param {Array<Array<Number>>} bitSets
- * @param {Array<Number>} durations
+ * @param {Array<Array<Number>>} bookingBitSets массив векторов возможности записи
+ * @param {Array<Number>} durations массив продолжительностей услуг в минутах
  * @param vectorSlotSize
+ * @return {Array<Array<Number>>}
  */
-export function buildSequenceBookingCRACVector(bitSets, durations, vectorSlotSize) {
+export function buildSequenceBookingCRACVector(bookingBitSets, durations, vectorSlotSize) {
   let leftShift = 0;
   let bookingVector = newFreeBitset(vectorSlotSize);
-  for (let i = 1; i < bitSets.length; i++) {
-    let curBookingVector = bitSets[i];
+  for (let i = 0; i < bookingBitSets.length; i++) {
+    let curBookingVector = bookingBitSets[i];
     
     // Сдвигаем вектор на суммарную длительность всех предыдущих услуг
     if (leftShift) {
-      curBookingVector = _vectorLeftShift(curBookingVector, leftShift);
+      curBookingVector = _vectorLeftShift(curBookingVector.slice(), leftShift);
     }
     
     bookingVector = setAnd(bookingVector, curBookingVector);
     
     // Вычисляем сдвиг следующего вектора
-    leftShift += durations[i] / vectorSlotSize;
+    leftShift += Math.floor(durations[i] / vectorSlotSize);
   }
   
   return bookingVector;
+}
+
+export function printCRACVector(bitset, int32delimiter = '.') {
+  return bitset.reduce((ret, /* Number */ n) => {
+    let sn = n.toString(2);
+    ret += (ret ? int32delimiter : '') + '0'.repeat(INT32_SIZE - sn.length) + sn;
+    return ret;
+  }, '');
 }
