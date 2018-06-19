@@ -404,7 +404,7 @@ export function printCRACVector(bitset, int32delimiter = '.') {
   }, '');
 }
 
-export function calcIntermediate(slot) {
+export function calcCRACSlotIntermediate(slot) {
   return slot.resources.reduce((ret, res) => {
     let bitset = setAnd(res.bitset, res.taxonomyBitSet);
     return setUnion(ret, bitset);
