@@ -1,7 +1,7 @@
 "use strict";
 
 import {defaultVectorSlotSize, busyBitSets, prepareBitset, getCRACFreeSlots, 
-  newBusyBitset, newFreeBitset, setAnd} from "./vector";
+  newBusyBitset, newFreeBitset, setAnd, setUnion} from "./vector";
 
 const INT32_SIZE = 32;
 
@@ -402,4 +402,11 @@ export function printCRACVector(bitset, int32delimiter = '.') {
     ret += (ret ? int32delimiter : '') + '0'.repeat(INT32_SIZE - sn.length) + sn;
     return ret;
   }, '');
+}
+
+export function calcIntermediate(slot) {
+  return slot.resources.reduce((ret, res) => {
+    let bitset = setAnd(res.bitset, res.taxonomyBitSet);
+    return setUnion(ret, bitset);
+  }, newBusyBitset());
 }
