@@ -79,7 +79,7 @@ function bitCount32(n) {
  * @returns {*}
  */
 function calculateWorkloadWeights(slots, vectorSlotSize) {
-  return Object.values(slots.reduce(function (ret, day) {
+  return Object.values((slots || []).reduce(function (ret, day) {
     let resources = day.resources;
     if (day.excludedResources) {
       resources = resources.filter(function (r) {
