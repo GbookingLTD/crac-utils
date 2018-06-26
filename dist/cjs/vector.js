@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.getCracVectorSlotSize = getCracVectorSlotSize;
 exports.bitsetStrToInt32Array = bitsetStrToInt32Array;
 exports.prepareBitset = prepareBitset;
 exports.newBusyBitset = newBusyBitset;
@@ -23,6 +24,10 @@ const freeBitSets = exports.freeBitSets = {
   5: busyBitSets[5].map(num => ~num >>> 0),
   1: busyBitSets[1].map(num => ~num >>> 0)
 };
+
+function getCracVectorSlotSize(bitset) {
+  return bitset.length > 9 ? 1 : 5;
+}
 
 /**
  * Convert string bitset into int32 array

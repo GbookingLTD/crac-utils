@@ -19,6 +19,10 @@ export const freeBitSets = {
   1: busyBitSets[1].map(num => ~num >>> 0),
 };
 
+export function getCracVectorSlotSize(bitset) {
+  return bitset.length > 9 ? 1 : 5;
+}
+
 /**
  * Convert string bitset into int32 array
  * @param str bitset in string representation
