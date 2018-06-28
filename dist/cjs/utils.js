@@ -79,6 +79,7 @@ function bitCount32(n) {
  * @returns {*}
  */
 function calculateWorkloadWeights(slots, vectorSlotSize) {
+  vectorSlotSize = vectorSlotSize || _vector.defaultVectorSlotSize;
   return Object.values((slots || []).reduce(function (ret, day) {
     let resources = day.resources;
     if (day.excludedResources) {
@@ -94,7 +95,17 @@ function calculateWorkloadWeights(slots, vectorSlotSize) {
       } catch (e) {
         bs = _vector.busyBitSets[vectorSlotSize];
       }
+
       if (!ret[r.resourceId]) {
+        ret[r.resourceId] = {
+          resourceId: r.resourceId,
+          weight: 0,
+          firstSlotDate: null,
+          firstSlotStartMinutes: 0
+        };
+      }
+
+      if (ret[r.resourceId].firstSlotDate === null) {
         let minutes;
         let p = { i: 0, b: 0 };
         if (_find1(p, bs) === -1) {
@@ -102,13 +113,12 @@ function calculateWorkloadWeights(slots, vectorSlotSize) {
         } else {
           minutes = (p.i * INT32_SIZE + p.b + 1) * vectorSlotSize;
         }
-        ret[r.resourceId] = {
-          resourceId: r.resourceId,
-          weight: 0,
-          firstSlotDate: day.date,
-          firstSlotStartMinutes: minutes
-        };
+        if (minutes) {
+          ret[r.resourceId].firstSlotDate = day.date;
+          ret[r.resourceId].firstSlotStartMinutes = minutes;
+        }
       }
+
       ret[r.resourceId].weight = ret[r.resourceId].weight + bs.reduce(function (ret, bsi) {
         return ret + bitCount32(bsi);
       }, 0);
