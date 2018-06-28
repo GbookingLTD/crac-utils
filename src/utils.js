@@ -80,10 +80,18 @@ export function calculateWorkloadWeights(slots, vectorSlotSize) {
         bs = busyBitSets[vectorSlotSize];
       }
       if (!ret[r.resourceId]) {
+        let minutes;
+        let p = {i: 0, b: 0};
+        if (_find1(p, bs) === -1) {
+          minutes = 0;
+        } else {
+          minutes = (p.i * INT32_SIZE + p.b + 1) * vectorSlotSize;
+        }
         ret[r.resourceId] = {
           resourceId: r.resourceId,
           weight: 0,
-          firstSlotDate: day.date
+          firstSlotDate: day.date,
+          firstSlotStartMinutes: minutes
         };
       }
       ret[r.resourceId].weight = ret[r.resourceId].weight + bs.reduce(function(ret, bsi) {

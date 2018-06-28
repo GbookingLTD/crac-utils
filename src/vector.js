@@ -44,7 +44,7 @@ export function bitsetStrToInt32Array(str, vectorSlotSize) {
     // i  - char index: from numberOfTimeUnits - 1 to 0
     // bi - byte index: from 0 to 8
     bi = (numberOfTimeUnits - 1 - i) >> 5;
-    bs[bi] = bs[bi] << 1 | (str[i] === "1");
+    bs[bi] = (bs[bi] << 1 | (str[i] === "1")) >>> 0;
   }
   return bs;
 }

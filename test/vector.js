@@ -41,7 +41,7 @@ describe('vector', function() {
     it('"1000..." string should generate 1 bit bitset', function() {
       var s = stringCracVector("1" + '0'.repeat(31));
       var bs = vector.bitsetStrToInt32Array(s);
-      (bs[0]).should.be.equal(1<<31);
+      (bs[0]).should.be.equal((1<<31) >>> 0);
     });
     it('3rd bit string should generate 3rd bit bitset', function() {
       var s = stringCracVector('0'.repeat(3) + "1");
@@ -174,6 +174,54 @@ describe('vector', function() {
         }]
       }]);
       _.find(weights, {resourceId: 'a'}).firstSlotDate.should.be.equal('2017-09-03 07:19:32.726Z');
+    });
+    it('zero vector should return 0 startMinutes', function() {
+      var slotSize = 5;
+      var weights = utils.calculateWorkloadWeights([{
+        date: "2018-06-28T00:00:00Z",
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('0'.repeat(288), slotSize)
+        }]
+      },], slotSize);
+      _.find(weights, {resourceId: 'a'}).firstSlotStartMinutes
+        .should.be.equal(0);
+    });
+    it('vector with start 1 bit should return 5 startMinutes', function() {
+      var slotSize = 5;
+      var weights = utils.calculateWorkloadWeights([{
+        date: "2018-06-28T00:00:00Z",
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('1' + '0'.repeat(287), slotSize)
+        }]
+      },], slotSize);
+      _.find(weights, {resourceId: 'a'}).firstSlotStartMinutes
+        .should.be.equal(5);
+    });
+    it('vector with last 1 bit should return (numOfBits * slotSize) startMinutes', function() {
+      var slotSize = 5;
+      var weights = utils.calculateWorkloadWeights([{
+        date: "2018-06-28T00:00:00Z",
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('0'.repeat(287) + '1', slotSize)
+        }]
+      },], slotSize);
+      _.find(weights, {resourceId: 'a'}).firstSlotStartMinutes
+        .should.be.equal(1440);
+    });
+    it('vector with 7th 1 bit should return 7 * startMinutes', function() {
+      var slotSize = 5;
+      var weights = utils.calculateWorkloadWeights([{
+        date: "2018-06-28T00:00:00Z",
+        resources:[{
+          resourceId: 'a',
+          bitset: stringCracVector('0'.repeat(6) + '1' + '0'.repeat(281), slotSize)
+        }]
+      },], slotSize);
+      _.find(weights, {resourceId: 'a'}).firstSlotStartMinutes
+        .should.be.equal(7 * slotSize);
     });
   })
 });
