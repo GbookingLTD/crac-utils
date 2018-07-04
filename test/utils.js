@@ -9,7 +9,7 @@ const utils = require('../dist/cjs/utils');
 describe('utils', function () {
   describe('getFirstLastMinutes', function () {
     it('zero bitset should return undefined', function () {
-      let bitset = vector.newBusyBitset(5)
+      let bitset = vector.newBusyBitset(5);
       utils.getFirstLastMinutes(bitset, 5).should.have.properties({
         start: undefined,
         end: undefined
@@ -101,6 +101,26 @@ describe('utils', function () {
       utils._find1(p, bitset).should.be.equal(-1);
       p.i.should.be.equal(9);
       p.b.should.be.equal(0);
+    });
+  });
+  describe('_findBack0', function () {
+    it('0 bit in start position should return 0 offset', function() {
+      let bitset = vector.newFreeBitset(5);
+      bitset[0] = bitset[0] & (~(1 << 31)) >>> 0;
+      let offset = utils._findBack0(bitset, {i:0, b:0}, 1);
+      (offset).should.be.equal(0);
+    });
+    it('first 0 bit should return length of vector if search from end of vector - 1', function() {
+      let bitset = vector.newFreeBitset(5);
+      bitset[0] = bitset[0] & (~(1 << 31)) >>> 0;
+      let offset = utils._findBack0(bitset, {i:8, b:31}, 288);
+      (offset).should.be.equal(287);
+    });
+    it('first 0 bit and start {i:0, b:3} should return offset = 3', function() {
+      let bitset = vector.newFreeBitset(5);
+      bitset[0] = bitset[0] & (~(1 << 31)) >>> 0;
+      let offset = utils._findBack0(bitset, {i:0, b:3}, 100);
+      (offset).should.be.equal(3);
     });
   });
   describe('_fill1', function () {

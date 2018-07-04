@@ -20,6 +20,7 @@ export const freeBitSets = {
 };
 
 export function getCracVectorSlotSize(bitset) {
+  if (typeof bitset === 'string') return bitset.length > 1000 ? 1 : 5;
   return bitset.length > 9 ? 1 : 5;
 }
 

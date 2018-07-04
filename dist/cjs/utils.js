@@ -8,6 +8,7 @@ exports.makeSlots = makeSlots;
 exports.calculateWorkloadWeights = calculateWorkloadWeights;
 exports.getFirstLastMinutes = getFirstLastMinutes;
 exports._find1 = _find1;
+exports._findBack0 = _findBack0;
 exports._fill1 = _fill1;
 exports.isSlotAvailable = isSlotAvailable;
 exports.buildBookingCRACVector = buildBookingCRACVector;
@@ -204,6 +205,38 @@ function _find1(p, vector) {
   }
 
   // весь вектор заполнен 0, возвращаем отрицательное число
+  return -1;
+}
+
+/**
+ * Производит поиск 0 бита в обратном направлении. 
+ * Возвращает количество бит, на которое нужно было сместиться назад.
+ * 
+ * @param vector crac-vector
+ * @param p      позиция на векторе, с которой начинается поиск
+ * @param count  количество бит, в которых производится поиск
+ * @return {number}
+ * @private
+ */
+function _findBack0(vector, p, count) {
+  let offset = 0;
+  while (p.i >= 0) {
+    // найден 0 бит - возвращаем результат
+    const bit = vector[p.i] >>> INT32_SIZE - p.b - 1 & 1;
+    if (bit === 0) {
+      return offset;
+    }
+
+    ++offset;
+    if (count-- < 0) return -1;
+
+    --p.b;
+    if (p.b < 0) {
+      p.b = 31;
+      --p.i;
+    }
+  }
+
   return -1;
 }
 
