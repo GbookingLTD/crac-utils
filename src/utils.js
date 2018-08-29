@@ -453,10 +453,3 @@ export function printCRACVector(bitset, int32delimiter = '.') {
     return ret;
   }, '');
 }
-
-export function calcCRACSlotIntermediate(slot) {
-  return slot.resources.reduce((ret, res) => {
-    let bitset = res.taxonomyBitSet ? setAnd(res.bitset, res.taxonomyBitSet) : res.bitset;
-    return setUnion(ret, bitset);
-  }, newBusyBitset());
-}

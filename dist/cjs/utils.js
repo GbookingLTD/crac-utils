@@ -15,7 +15,6 @@ exports.buildBookingCRACVector = buildBookingCRACVector;
 exports._vectorLeftShift = _vectorLeftShift;
 exports.buildSequenceBookingCRACVector = buildSequenceBookingCRACVector;
 exports.printCRACVector = printCRACVector;
-exports.calcCRACSlotIntermediate = calcCRACSlotIntermediate;
 
 var _vector = require("./vector");
 
@@ -444,11 +443,4 @@ function printCRACVector(bitset, int32delimiter = '.') {
     ret += (ret ? int32delimiter : '') + '0'.repeat(INT32_SIZE - sn.length) + sn;
     return ret;
   }, '');
-}
-
-function calcCRACSlotIntermediate(slot) {
-  return slot.resources.reduce((ret, res) => {
-    let bitset = res.taxonomyBitSet ? (0, _vector.setAnd)(res.bitset, res.taxonomyBitSet) : res.bitset;
-    return (0, _vector.setUnion)(ret, bitset);
-  }, (0, _vector.newBusyBitset)());
 }
