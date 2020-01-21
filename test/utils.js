@@ -22,6 +22,13 @@ describe('utils', function () {
         end: 1440
       });
     });
+    it('boundary test, last bits', function () {
+      let bitset = [0, 0, 0, 0, 0, 32760, 31, 2147483648, 0];
+      utils.getFirstLastMinutes(bitset, 5).should.have.properties({
+        start: 885,
+        end: 1125
+      });
+    });
     it('full bitset except first, last items', function () {
       let bitset = vector.newFreeBitset(5);
       bitset[0] = 0;
