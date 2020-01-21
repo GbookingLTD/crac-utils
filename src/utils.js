@@ -146,7 +146,7 @@ export function getFirstLastMinutes(bitset, vectorSlotSize) {
         } 
       }
       
-      if (endBoundIndex) break;
+      if (endBoundIndex || endBoundIndex===0) break;
     }
   }
   
